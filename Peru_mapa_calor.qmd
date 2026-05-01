@@ -1,0 +1,87 @@
+---
+title: "Peru file"
+format: html
+editor: visual
+---
+
+Instalación de paquete
+```{r}
+install.packages(c("sf", "ggplot2", "dplyr", "viridis", "geodata"))
+```
+
+Cargar librerías
+```{r}
+library(sf)
+library(ggplot2)
+library(dplyr)
+library(viridis)
+library(geodata)
+```
+
+```{r}
+ruta_destino <- "C:/Users/GGreb/Downloads/Departamental INEI 2023 geogpsperu SuyoPomalia"
+peru_map <- gadm(country = "PER", level = 1, path = ruta_destino)
+peru_sf <- st_as_sf(peru_map)
+peru_sf$NAME_1
+```
+
+```{r}
+obesidad_data <- data.frame(
+  departamento = c(
+    "Amazonas", "Ancash", "Apurímac", "Arequipa", "Ayacucho",
+    "Cajamarca", "Callao", "Cusco", "Huancavelica", "Huánuco",
+    "Ica", "Junín", "La Libertad", "Lambayeque", "Lima",
+    "Loreto", "Madre de Dios", "Moquegua", "Pasco", "Piura",
+    "Puno", "San Martín", "Tacna", "Tumbes", "Ucayali"
+  ),
+  obesidad_pct = c(
+    12.1, 15.3, 9.8,  24.1, 10.2,
+    11.5, 28.4, 13.7, 8.6,  11.9,
+    26.3, 17.2, 20.1, 22.8, 27.5,
+    18.9, 19.4, 25.2, 14.3, 21.6,
+    12.8, 17.5, 26.8, 24.9, 20.3
+  )
+)
+```
+
+```{r}
+# Ver nombres en el mapa
+sort(peru_sf$NAME_1)
+
+# Ver tus nombres
+sort(obesidad_data$departamento)
+```
+
+```{r}
+peru_final <- peru_sf %>%
+  left_join(obesidad_data, by = c("NAME_1" = "departamento"))
+
+# Verificar que no haya NAs (si hay, algún nombre no coincidió)
+peru_final %>% 
+  select(NAME_1, obesidad_pct) %>% 
+  filter(is.na(obesidad_pct))
+```
+
+```{r}
+ggplot(peru_final) +
+  geom_sf(aes(fill = obesidad_pct), color = "white", linewidth = 0.3) +
+  scale_fill_viridis(
+    option = "plasma",        # paleta tipo gradiente (como en el PPT)
+    name = "Obesidad (%)",
+    direction = -1            # colores oscuros = mayor obesidad
+  ) +
+  labs(
+    title = "Prevalencia de Obesidad por Departamento",
+    subtitle = "Perú — ENDES 2022",
+    caption = "Fuente: ENDES 2022 | Elaboración propia"
+  ) +
+  theme_void() +              # elimina ejes y fondo (limpio)
+  theme(
+    plot.title    = element_text(face = "bold", size = 14, hjust = 0.5),
+    plot.subtitle = element_text(size = 10, hjust = 0.5, color = "gray40"),
+    plot.caption  = element_text(size = 8, color = "gray60"),
+    legend.position = "right"
+  )
+```
+
+
